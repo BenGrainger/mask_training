@@ -9,4 +9,4 @@ pip install imagecodecs  # to read full res tiff files
 pip install matplotlib.pyplot
 
 
-pip install cuml-cu12
+pip install cuml-cu12 # for main_cuml
