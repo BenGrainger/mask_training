@@ -1,0 +1,7 @@
+# ignore these files
+*.png
+*.log
+*.npy
+outputs/
+catboost_info/
+__pycache__/
