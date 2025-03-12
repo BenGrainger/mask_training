@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from cuml.ensemble import RandomForestClassifier
 import cudf  # GPU dataframe
-import cv2
+import skimage
 
 
 print('..........loading config')
@@ -115,7 +115,8 @@ fpr_scores = []
 check_folder_exists(out_dir + "/images")
 
 for i, (image, annotation) in enumerate(test_dataloader):
-    dummy_annotation = np.empty_like(image.squeeze())  # No need for "empty_array ="
+    print('.......... predicting test image', i)
+    dummy_annotation = np.empty_like(image.squeeze())  
 
     # Extract features from the model
     features, targets = conv_paint.get_features_current_layers(
@@ -134,19 +135,15 @@ for i, (image, annotation) in enumerate(test_dataloader):
     # Convert predictions from cuDF to NumPy array
     y_pred_numpy = y_pred_gpu.to_numpy()
 
-    # Get original image dimensions
-    x_dim, y_dim = dummy_annotation.shape  # Should match original image (4000, 3000)
+    rows = np.ceil(image.shape[-2] / downsample_factor).astype(int)
+    cols = np.ceil(image.shape[-1] / downsample_factor).astype(int)
 
-    # Corrected aspect ratio calculation
-    approx_x = int(np.sqrt(len(y_pred_numpy) * (y_dim / x_dim)))  # Maintain correct proportion
-    approx_y = len(y_pred_numpy) // approx_x  # Ensure it fits exactly
+    predicted_image = np.reshape(y_pred_numpy, [rows, cols])
 
-    # Ensure dimensions are valid before reshaping
-    valid_size = approx_x * approx_y
-    y_pred_2d = y_pred_numpy[:valid_size].reshape((approx_x, approx_y))
-
-    # Upsample using nearest-neighbor to preserve binary values
-    predicted_image = cv2.resize(y_pred_2d, (y_dim, x_dim), interpolation=cv2.INTER_NEAREST)
+    predicted_image = skimage.transform.resize(
+                image=predicted_image,
+                output_shape=(image.shape[-2], image.shape[-1]),
+                preserve_range=True, order=1).astype(np.uint8)
 
     # Read ground truth mask
     ground_truth = annotation.squeeze()

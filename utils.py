@@ -7,6 +7,7 @@ import logging
 import json
 import datetime 
 from pathlib import Path
+import cv2
 
 
 class TiffDataset(Dataset):
@@ -167,3 +168,10 @@ def check_folder_exists(directory):
             print(f"Error creating folder '{directory}': {e}")
     else:
         print(f"Folder '{directory}' already exists.")
+
+
+def downsample_image_opencv(img, factor):
+    """Downsample an image using OpenCV's resize function."""
+    h, w = img.shape[:2]
+    new_size = (w // factor, h // factor)
+    return cv2.resize(img, new_size, interpolation=cv2.INTER_AREA)
