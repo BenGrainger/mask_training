@@ -138,7 +138,8 @@ for i, (image, annotation) in enumerate(test_dataloader):
     rows = np.ceil(image.shape[-2] / downsample_factor).astype(int)
     cols = np.ceil(image.shape[-1] / downsample_factor).astype(int)
 
-    predicted_image = np.reshape(y_pred_numpy, [rows, cols])
+    predicted_image = np.append(y_pred_numpy, 0)
+    predicted_image = np.reshape(predicted_image, [rows, cols])
 
     predicted_image = skimage.transform.resize(
                 image=predicted_image,
