@@ -13,7 +13,7 @@ import skimage
 
 
 print('..........loading config')
-config_path = r'configs/test_config.json'
+config_path = r'configs/config.json'
 
 script = ScriptSetup(config_path)
 script.load_script()
@@ -91,6 +91,7 @@ for i, (image, annotation) in enumerate(train_dataloader):
         model=model,
         param=param,
     )
+    print(features.shape)
     all_features.append(features)
     all_targets.append(targets)
 
@@ -104,8 +105,9 @@ X_gpu = cudf.DataFrame(features_array)
 y_gpu = cudf.Series(targets_array)
 
 # Train GPU-based Random Forest
-rf_gpu = RandomForestClassifier(n_estimators=100, max_depth=10, n_bins=16)
+rf_gpu = RandomForestClassifier(n_estimators=200, max_depth=10, n_bins=16)
 rf_gpu.fit(X_gpu, y_gpu)
+
 
 print('..........GPU predict')
 
@@ -114,20 +116,20 @@ fpr_scores = []
 
 check_folder_exists(out_dir + "/images")
 
-for i, (image, annotation) in enumerate(test_dataloader):
-    print('.......... predicting test image', i)
-    dummy_annotation = np.empty_like(image.squeeze())  
 
-    # Extract features from the model
-    features, targets = conv_paint.get_features_current_layers(
+for i, (image, annotation) in enumerate(test_dataloader):
+    print(i)
+
+    feature, targets = conv_paint.get_features_current_layers(
         image.squeeze(),
-        dummy_annotation,
+        annotation.squeeze(),
         model=model,
         param=param,
     )
 
+
     # Convert features to cuDF DataFrame for cuML processing
-    X_gpu = cudf.DataFrame(features)
+    X_gpu = cudf.DataFrame(feature)
 
     # Use trained classifier to make predictions
     y_pred_gpu = rf_gpu.predict(X_gpu)
@@ -138,8 +140,7 @@ for i, (image, annotation) in enumerate(test_dataloader):
     rows = np.ceil(image.shape[-2] / downsample_factor).astype(int)
     cols = np.ceil(image.shape[-1] / downsample_factor).astype(int)
 
-    predicted_image = np.append(y_pred_numpy, 0)
-    predicted_image = np.reshape(predicted_image, [rows, cols])
+    predicted_image = np.reshape(y_pred_numpy, [rows, cols])
 
     predicted_image = skimage.transform.resize(
                 image=predicted_image,
@@ -169,3 +170,5 @@ scores = {
 df = pd.DataFrame(scores)
 df.to_csv(out_dir + '/score.csv', index=False)
 
+
+# %%

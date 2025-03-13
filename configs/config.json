@@ -1,0 +1,9 @@
+{
+    "output_dir" : "outputs/test_alltiles",  
+    "data_dir":  "debris/data/full_res_all_tiles/",
+    "data_list": {"mask": "data","data": "mask"},
+    "slice_n": 250,
+    "batch_size" : 1,
+    "depth" : 2,
+    "downsample" : 15
+}
